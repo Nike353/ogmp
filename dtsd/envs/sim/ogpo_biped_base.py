@@ -15,10 +15,12 @@ import datetime
 import torch
 import yaml
 import os
+import gymnasium as gym
+from gymnasium.spaces import Box
 
 EXP_DIR_PATH = os.path.dirname(__file__).replace('dtsd/envs/sim','')
 
-class ogpo_biped_base:
+class ogpo_biped_base(gym.Env):
   
   def __init__(self, exp_conf_path='./exp_confs/default.yaml'):
 
@@ -95,8 +97,8 @@ class ogpo_biped_base:
     act_dim = self.prepare_action_space()
     
     dummy_obs = self.get_full_obs()
-    self.observation_space = np.zeros_like(dummy_obs)
-    self.action_space  = np.zeros(act_dim)
+    self.observation_space = Box(low = -np.inf,high =np.inf,shape = dummy_obs.shape,dtype=np.float32)#np.zeros_like(dummy_obs)
+    self.action_space  = Box(low = -3.14,high=3.14,shape = (act_dim,),dtype=np.float32)#np.zeros(act_dim)
 
     # set pd gains as list
     if not isinstance(self.exp_conf['p_gain'],list):
@@ -197,10 +199,10 @@ class ogpo_biped_base:
       self.phase += self.phase_add
       obs = self.get_full_obs()
 
-      return obs, reward, done, info_dict
+      return obs, reward, done,False, info_dict
   
   def reset(
-            self
+            self,seed=0
            ):
 
       self.export_logger.reset()
@@ -236,7 +238,7 @@ class ogpo_biped_base:
         self.sim.set_vclone_color(set='green') 
   
       obs0 = self.get_full_obs()
-      return obs0
+      return obs0,{}
 
   def close(self):
     self.sim.close()

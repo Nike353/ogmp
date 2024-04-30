@@ -9,7 +9,7 @@ class env(ogpo_biped_base):
         self.exp_conf['oracle']['prediction_horizon'] = self.phaselen
         return sup_return
     
-    def reset(self):
+    def reset(self,seed=0):
         sup_return =  super().reset()
         self.exp_conf['oracle']['prediction_horizon'] = self.phaselen
         return sup_return
