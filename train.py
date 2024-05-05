@@ -45,6 +45,47 @@ if __name__ == "__main__":
     algo_module = getattr(stable_baselines3,exp_conf['algo']['name'])
     algo = algo_module("MlpPolicy",train_env,verbose=0,tensorboard_log=args.logdir,**exp_conf['algo']['params'])
     algo.learn(total_timesteps=args.timesteps,progress_bar=True,callback=eval_callback)
+  
+  elif option == "sb3_contrib":
+    """to run sb3 algos"""
+    import torch
+    import yaml
+    import torch.nn as nn
+    from stable_baselines3.common.env_util import make_vec_env
+    from stable_baselines3.common.callbacks import EvalCallback
+    import sb3_contrib
+        
+    parser.add_argument("--timesteps", default=600000000)
+    parser.add_argument("--logdir",             default="./logs/ppo/", type=str)   # where to store log information
+    # env params to play with 
+    parser.add_argument("--exp_conf_path",  default="./exp_confs/default.yaml", type=str)  # path to econf file of experiment parameters
+    args = parser.parse_args()
+    torch.set_num_threads(1)
+    from src.util import env_factory
+    env_fn     = env_factory(
+                              args.exp_conf_path
+                            )
+    conf_file = open(args.exp_conf_path)
+    exp_conf = yaml.load(conf_file, Loader=yaml.FullLoader)
+    policy_kwargs= {
+                    'log_std_init': -2,
+                    'ortho_init': False,
+                    'activation_fn': nn.Tanh,
+                    'net_arch': {
+                                'pi': [128,128],
+                                'vf': [128,128]
+                              }
+                    }
+    exp_conf['algo']['params']['policy_kwargs'] = policy_kwargs
+    train_env = make_vec_env(env_fn,n_envs= exp_conf['algo']['n_envs'])
+    eval_env = make_vec_env(env_fn,n_envs=1)
+    eval_callback = EvalCallback(eval_env, best_model_save_path=args.logdir,
+                             log_path=args.logdir, eval_freq=50000,
+                             deterministic=True, render=False)
+    algo_module = getattr(sb3_contrib,exp_conf['algo']['name'])
+    algo = algo_module("MlpLstmPolicy",train_env,verbose=0,tensorboard_log=args.logdir,**exp_conf['algo']['params'])
+    algo.learn(total_timesteps=args.timesteps,progress_bar=True,callback=eval_callback)
+
     
   else:
     "to run custom ppo"

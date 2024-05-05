@@ -91,7 +91,7 @@ mode_encoder:
   - x
 
 algo:
-  name: PPO
+  name: RecurrentPPO
   n_envs: 4
   params:
     gamma: 0.95
